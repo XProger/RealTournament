@@ -1,11 +1,20 @@
 #ifndef H_LEVEL
 #define H_LEVEL
 
+#include "camera.h"
+
+struct BasePlayer {
+    virtual ~BasePlayer() {}
+    virtual void hit(int damage) {}
+    virtual void update() {}
+    virtual void render(Camera *camera) {}
+    virtual void trace(const vec3 &rayPos, const vec3 &rayDir, float &t) {}
+};
+
 #include "utils.h"
 #include "texture.h"
 #include "shader.h"
 #include "mesh.h"
-#include "camera.h"
 
 #define LEVEL_MAX_RESPAWNS 8
 
@@ -123,6 +132,47 @@ struct Level {
 
             obj->mesh->bind();
             obj->mesh->draw();
+        }
+/*
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glMatrixMode(GL_MODELVIEW);
+        glLoadMatrixf((GLfloat*)&camera->mViewProj);
+        glUseProgram(0);
+        glPointSize(4);
+        glBegin(GL_POINTS);
+        for (int i = 0; i < 64; i++)
+            glVertex3fv((GLfloat*)&points[i]);
+        glEnd();
+*/
+    }
+
+    void trace(const vec3 &rayPos, const vec3 &rayDir, float &t) {
+        for (int j = 0; j < objectsCount; j++) {
+            Object *obj = objects[j];
+            if (obj->type != Level::Object::MESH)
+                continue;
+
+            mat4 mInv = obj->matrix.inverseOrtho();
+            vec3 rayPosLocal = mInv * vec4(rayPos, 1.0);
+            vec3 rayDirLocal = mInv * vec4(rayDir, 0.0);
+
+            for (int i = 0; i < obj->iCount; i += 3) {
+                vec3 &a = obj->vertices[obj->indices[i + 0]].coord;
+                vec3 &b = obj->vertices[obj->indices[i + 1]].coord;
+                vec3 &c = obj->vertices[obj->indices[i + 2]].coord;
+
+                if ((a.x == b.x && a.y == b.y && a.z == b.z) ||
+                    (c.x == b.x && c.y == b.y && c.z == b.z) ||
+                    (a.x == c.x && a.y == c.y && a.z == c.z)) {
+                    continue;
+                }
+
+                float u, v;
+                float t0;
+                if (Triangle(a, b, c).intersect(rayPosLocal, rayDirLocal, false, u, v, t0) && t0 < t)
+                    t = t0;
+            }
         }
     }
 

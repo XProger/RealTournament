@@ -9,13 +9,15 @@
 #include "camera.h"
 #include "level.h"
 #include "player.h"
+#include "bullet.h"
+
+Level       *level;
+BasePlayer  *players[8];
+int         playersCount;
 
 namespace Game {
     Camera  *camera;
-    Level   *level;
-    Player  *players[8];
-    Player  *curPlayer;
-    int     playersCount;
+    BasePlayer *curPlayer;
     bool    splitscreen;
 
     void init() {
@@ -24,15 +26,18 @@ namespace Game {
         camera = new Camera();
         level = new Level("level1.lvl");
 
+        playersCount = 0;
         players[playersCount++] = new Player(level, Player::PLAYER_1);
         players[playersCount++] = new Player(level, Player::PLAYER_2);
 
         curPlayer = players[0];
 
         splitscreen = true;
+        initBullets();
     }
 
     void deinit() {
+        deinitBullets();
         for (int i = 0; i < playersCount; i++)
             delete players[i];
         delete level;
@@ -42,8 +47,9 @@ namespace Game {
 
     void updateTick() {
         level->update();
+        updateBullets();
         for (int i = 0; i < playersCount; i++)
-        players[i]->update();
+            players[i]->update();
     }
 
     void update() {
@@ -57,8 +63,8 @@ namespace Game {
 
     void renderView(float aspect) {
         if (!camera->freeCam) {
-            camera->pos = curPlayer->getHeadPos();
-            camera->rot = curPlayer->rot;
+            camera->pos = ((Player*)curPlayer)->getHeadPos();
+            camera->rot = ((Player*)curPlayer)->rot;
             camera->aspect = aspect;
         }
         camera->update();
@@ -67,6 +73,8 @@ namespace Game {
         for (int i = 0; i < playersCount; i++)
             if (players[i] != curPlayer)
                 players[i]->render(camera);
+
+        renderBullets(camera);
     }
 
     void render() {

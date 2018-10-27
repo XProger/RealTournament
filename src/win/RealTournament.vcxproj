@@ -135,6 +135,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\bullet.h" />
     <ClInclude Include="..\camera.h" />
     <ClInclude Include="..\context.h" />
     <ClInclude Include="..\game.h" />
@@ -145,6 +146,7 @@
     <ClInclude Include="..\shader.h" />
     <ClInclude Include="..\texture.h" />
     <ClInclude Include="..\utils.h" />
+    <ClInclude Include="..\weapon.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\bin\shader.glsl" />

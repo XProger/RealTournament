@@ -3,6 +3,7 @@
 
 #include "utils.h"
 #include "level.h"
+#include "weapon.h"
 
 #define PLAYER_RADIUS           0.25f
 #define PLAYER_RADIUS_GROUND    0.15f
@@ -15,7 +16,7 @@
 #define PLAYER_FRICTION_STOP    0.025f
 #define PLAYER_JUMP_SPEED       8.0f
 
-struct Player {
+struct Player : BasePlayer {
     enum PlayerType {
         PLAYER_1,
         PLAYER_2,
@@ -28,9 +29,12 @@ struct Player {
         UP      = 4,
         DOWN    = 8,
         JUMP    = 16,
+        FIRE_A  = 32,
+        FIRE_B  = 64,
     };
 
-    Level *level;
+    Level  *level;
+    Weapon *weapon;
 
     int  health;
 
@@ -42,12 +46,14 @@ struct Player {
 
     bool onGround;
 
-    Player(Level *level, PlayerType type) : level(level), type(type) {
+    Player(Level *level, PlayerType type) : BasePlayer(), level(level), type(type) {
         respawn();
         model = new Level("enemy.lvl");
+        weapon = new Pistol();
     }
 
-    ~Player() {
+    virtual ~Player() {
+        delete weapon;
         delete model;
     }
 
@@ -84,7 +90,7 @@ struct Player {
         velocity = velocity + dir * accelSpeed;
     }
     */
-    void update() {
+    virtual void update() {
         int32 input = 0;
 
         switch (type) {
@@ -102,6 +108,8 @@ struct Player {
                 if (Input::down['W']) input |= UP;
                 if (Input::down['S']) input |= DOWN;
                 if (Input::down[VK_SPACE]) input |= JUMP;
+                if (Input::down[VK_LBUTTON]) input |= FIRE_A;
+                if (Input::down[VK_RBUTTON]) input |= FIRE_B;
                 break;
 
 
@@ -116,13 +124,10 @@ struct Player {
             default : ;
         }
 
-
-
         velocity.y = velocity.y - level->gravity * deltaTime;
 
         if (onGround)
             velocity.y = 0.0f;
-
 
         rot.x = clamp(rot.x, -PI * 0.5f, +PI * 0.5f);
 
@@ -220,14 +225,18 @@ struct Player {
                 continue;
             collide(obj);
         }
+
+        weapon->fire(pos + vec3(0.0f, PLAYER_HEIGHT * 0.5f, 0.0f), rot, (input & (FIRE_A | FIRE_B)) != 0, (input & FIRE_B) != 0);
+
+        {
+            mat4 &m = model->objects[0]->matrix;
+            m.identity();
+            m.translate(pos);
+            m.rotateY(rot.y);
+        }
     }
 
-    void render(Camera *camera) {
-        mat4 &m = model->objects[0]->matrix;
-        m.identity();
-        m.translate(pos);
-        m.rotateY(rot.y);
-
+    virtual void render(Camera *camera) {
         model->render(camera);
     }
 
@@ -257,6 +266,17 @@ struct Player {
                 pos = pos + n * t;
             }
         }
+    }
+
+    virtual void hit(int damage) {
+        health -= damage;
+        LOG("hit: %d\n", health);
+        if (health <= 0)
+            respawn();
+    }
+
+    virtual void trace(const vec3 &rayPos, const vec3 &rayDir, float &t) {
+        model->trace(rayPos, rayDir, t);
     }
 };
 
