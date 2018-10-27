@@ -78,6 +78,9 @@ int main(int argc, char **argv) {
         } else {
             int time = osGetTime();
             deltaTime = (time - lastTime) / 1000.0f;
+            if (deltaTime > 0.1f) {
+                deltaTime = 0.1f;
+            }
             lastTime = time;
 
             glClear(GL_COLOR_BUFFER_BIT);
