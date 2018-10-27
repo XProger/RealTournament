@@ -65,25 +65,29 @@ void inputInit() {
     curNone = CreateCursor(0, 0, 0, 32, 32, maskA, maskX);
 }
 
+POINT center = { 0, 0 };
+
 void inputUpdate() {
     Input::mouseDelta = vec3(0.0f);
 
-    POINT p;
+    POINT p, delta;
     GetCursorPos(&p);
+
+    delta.x = p.x - center.x;
+    delta.y = p.y - center.y;
+
     ScreenToClient(hWnd, &p);
     Input::mousePos = vec3((float)p.x, (float)p.y, 0.0f);
 
     if (Input::mouseCapture) {
         RECT r;
-        GetClientRect(hWnd, &r);
-        POINT c;
-        c.x = (r.left + r.right) / 2;
-        c.y = (r.top + r.bottom) / 2;
+        GetWindowRect(hWnd, &r);
+        center.x = (r.left + r.right) / 2;
+        center.y = (r.top + r.bottom) / 2;
 
-        Input::mouseDelta = vec3((float)(p.x - c.x), (float)(p.y - c.y), 0.0f);
+        Input::mouseDelta = vec3((float)delta.x, (float)delta.y, 0.0f);
 
-        ClientToScreen(hWnd, &c);
-        SetCursorPos(c.x, c.y);
+        SetCursorPos(center.x, center.y);
 
         SetClassLong(hWnd, GCL_HCURSOR, (LONG)curNone);
     } else

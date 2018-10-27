@@ -141,10 +141,10 @@
     <ClInclude Include="..\input.h" />
     <ClInclude Include="..\level.h" />
     <ClInclude Include="..\mesh.h" />
+    <ClInclude Include="..\player.h" />
     <ClInclude Include="..\shader.h" />
     <ClInclude Include="..\texture.h" />
     <ClInclude Include="..\utils.h" />
-    <ClInclude Include="player.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\bin\shader.glsl" />

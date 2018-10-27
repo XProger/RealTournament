@@ -81,6 +81,8 @@ struct Player {
         rot.x -= Input::mouseDelta.y * 0.001f;
         rot.y -= Input::mouseDelta.x * 0.001f;
 
+        rot.x = clamp(rot.x, -PI * 0.5f, +PI * 0.5f);
+
         mat4 m;
         m.identity();
         m.rotateZ(-rot.z);
