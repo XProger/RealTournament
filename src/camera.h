@@ -10,29 +10,34 @@ struct Camera {
 
     mat4 mView, mProj, mViewProj;
 
+    bool freeCam;
+
     Camera() {
         pos = vec3(0.0f);
         rot = vec3(0.0f);
+        freeCam = false;
     }
 
     void update() {
-        rot.x -= Input::mouseDelta.y * 0.001f;
-        rot.y -= Input::mouseDelta.x * 0.001f;
+        if (freeCam) {
+            rot.x -= Input::mouseDelta.y * 0.001f;
+            rot.y -= Input::mouseDelta.x * 0.001f;
+        }
 
         mView.identity();
         mView.rotateZ(-rot.z);
         mView.rotateX(-rot.x);
         mView.rotateY(-rot.y);
-        
-        vec3 dir   = vec3(mView.e20, mView.e21, mView.e22);
-        vec3 right = vec3(mView.e00, mView.e01, mView.e02);
 
-        float k = deltaTime * 1.0f;
-
-        if (Input::down['A']) pos = pos - right * k;
-        if (Input::down['D']) pos = pos + right * k;
-        if (Input::down['W']) pos = pos - dir * k;
-        if (Input::down['S']) pos = pos + dir * k;
+        if (freeCam) {
+            vec3 dir   = vec3(mView.e20, mView.e21, mView.e22);
+            vec3 right = vec3(mView.e00, mView.e01, mView.e02);
+            float k = deltaTime * 4.0f;
+            if (Input::down['A']) pos = pos - right * k;
+            if (Input::down['D']) pos = pos + right * k;
+            if (Input::down['W']) pos = pos - dir * k;
+            if (Input::down['S']) pos = pos + dir * k;
+        }
         
         mView.translate(-pos);
 

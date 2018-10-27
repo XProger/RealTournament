@@ -4,15 +4,18 @@
 #include "context.h"
 
 #define SHADER_SAMPLER(E)\
-    E( sDiffuse )
+    E( sDiffuse )\
+    E( sLightmap )
+
 
 #define SHADER_ATTRIB(E)\
     E( aCoord )\
-    E( aColor )\
+    E( aNormal )\
     E( aTexCoord )
 
 #define SHADER_UNIFORM(E)\
     E( uViewProj )\
+    E( uModel )\
     E( uColor )
 
 #define DECL_ENUM(V)    V,
@@ -73,6 +76,8 @@ struct Shader {
             glDeleteShader(obj);
         }
 
+        delete[] source;
+
         for (int i = 0; i < aMAX; i++)
             glBindAttribLocation(ID, i, AttribName[i]);
 
@@ -85,6 +90,7 @@ struct Shader {
         for (int i = 0; i < uMAX; i++)
             UID[i] = glGetUniformLocation(ID, UniformName[i]);
 
+        glUseProgram(ID);
         for (int i = 0; i < sMAX; i++) {
             int sampler = glGetUniformLocation(ID, SamplerName[i]);
             if (sampler != -1) {

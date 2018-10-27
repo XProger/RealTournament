@@ -28,14 +28,14 @@ struct Mesh {
         glBindBuffer(GL_ARRAY_BUFFER, ID[1]);
 
         glEnableVertexAttribArray(aCoord);
+        glEnableVertexAttribArray(aNormal);
         glEnableVertexAttribArray(aTexCoord);
-        glEnableVertexAttribArray(aColor);
 
         Vertex *v = NULL;
 
-        glVertexAttribPointer(aCoord, 2, GL_FLOAT, false, sizeof(Vertex), &v->x);
-        glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, false, sizeof(Vertex), &v->s);
-        glVertexAttribPointer(aColor, 3, GL_FLOAT, false, sizeof(Vertex), &v->r);
+        glVertexAttribPointer(aCoord,    3, GL_FLOAT, false, sizeof(Vertex), &v->coord);
+        glVertexAttribPointer(aNormal,   3, GL_FLOAT, false, sizeof(Vertex), &v->normal);
+        glVertexAttribPointer(aTexCoord, 4, GL_FLOAT, false, sizeof(Vertex), &v->texCoord);
     }
 
     void draw() {

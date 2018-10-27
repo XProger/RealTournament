@@ -60,7 +60,7 @@ struct Texture {
     }
 
     void bind(int sampler) {
-        glEnable(GL_TEXTURE_2D);
+        glActiveTexture(GL_TEXTURE0 + sampler);
         glBindTexture(GL_TEXTURE_2D, ID);
     }
 };

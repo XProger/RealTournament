@@ -11,7 +11,7 @@ namespace Input {
 
     void reset() {
         memset(down, 0, sizeof(down));
-        mouseCapture = true;
+        mouseCapture = false;
         mousePos     = vec3(0.0f);
         mouseDelta   = vec3(0.0f);
     }

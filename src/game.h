@@ -7,58 +7,53 @@
 #include "context.h"
 #include "shader.h"
 #include "camera.h"
+#include "level.h"
+#include "player.h"
 
 namespace Game {
     Camera  *camera;
-    Texture *texture;
-    Shader  *shader;
-    Mesh    *mesh;
+    Level   *level;
+    Player  *player;
 
     void init() {
         Context::init();
-        texture = new Texture("bricks.tga");
-        shader  = new Shader("shader.glsl");
-
-        Index indices[] = { 0, 1, 2, 0, 2, 3 };
-
-        Vertex vertices[] = {
-            { 1, 0, 0,  0, 0,  -0.5f, -0.5f },
-            { 0, 1, 0,  1, 0,   0.5f, -0.5f },
-            { 0, 0, 1,  1, 1,   0.5f,  0.5f },
-            { 1, 0, 1,  0, 1,  -0.5f,  0.5f },
-        };
-
-        mesh = new Mesh(indices, sizeof(indices) / sizeof(indices[0]), vertices, sizeof(vertices) / sizeof(vertices[0]));
 
         camera = new Camera();
+        level = new Level("level1.lvl");
+        player = new Player();
     }
 
     void deinit() {
+        delete player;
+        delete level;
         delete camera;
-        delete mesh;
-        delete texture;
         Context::deinit();
     }
 
-    void update() {
+    void updateTick() {
+        level->update();
+        player->update(level);
+        if (!camera->freeCam) {
+            camera->pos = player->getHeadPos();
+            camera->rot = player->rot;
+        }
         camera->update();
+    }
+
+    void update() {
+        float d = deltaTime;
+        while (d > 0.0f) {
+            deltaTime = min(d, 1.0f / 60.0f);
+            updateTick();
+            d -= deltaTime;
+        }
     }
 
     void render() {
         glViewport(0, 0, Context::width, Context::height);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        shader->bind();
-        shader->setParam(uViewProj, camera->mViewProj);
-        shader->setParam(uColor, vec4(1.0f));
-
-        mesh->bind();
-        texture->bind(0);
-
-        mesh->draw();
+        level->render(camera);
     }
 }
 

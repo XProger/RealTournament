@@ -7,6 +7,7 @@
 #include <gl/glext.h>
 
 // textures
+PFNGLACTIVETEXTUREPROC  glActiveTexture;
 PFNGLGENERATEMIPMAPPROC glGenerateMipmap;
 // buffers
 PFNGLGENBUFFERSPROC     glGenBuffers;
@@ -38,9 +39,9 @@ PFNGLUNIFORMMATRIX4FVPROC           glUniformMatrix4fv;
 typedef uint16 Index;
 
 struct Vertex {
-    float r, g, b;
-    float s, t;
-    float x, y;
+    vec3 coord;
+    vec3 normal;
+    vec4 texCoord;
 };
 
 namespace Context {
@@ -57,6 +58,7 @@ namespace Context {
         LOG("Renderer : %s\n", glGetString(GL_RENDERER));
         LOG("Version  : %s\n", glGetString(GL_VERSION));
 
+        GetProcGL(glActiveTexture);
         GetProcGL(glGenerateMipmap);
 
         GetProcGL(glGenBuffers);

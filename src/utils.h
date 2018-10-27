@@ -19,6 +19,11 @@ extern float deltaTime;
 #define DEG2RAD (PI / 180.0f)
 #define RAD2DEG (180.0f / PI)
 
+float clamp(float x, float a, float b) {
+    if (x < a) return a;
+    if (x > b) return b;
+    return x;
+}
 
 struct vec3 {
     float x, y, z;
@@ -31,6 +36,11 @@ struct vec3 {
     vec3 operator + (const vec3 &v) const { return vec3(x + v.x, y + v.y, z + v.z); }
     vec3 operator - (const vec3 &v) const { return vec3(x - v.x, y - v.y, z - v.z); }
     vec3 operator * (const float s) const { return vec3(x * s, y * s, z * s); }
+
+    float dot(const vec3 &v) const { return x * v.x + y * v.y + z * v.z; }
+    float length2() const { return this->dot(*this); };
+    float length() const { return sqrtf(length2()); }
+    vec3  normal() const { return *this * (1.0f / length()); }
 };
 
 struct vec4 {
@@ -132,6 +142,76 @@ struct mat4 {
     }
 };
 
+
+struct Triangle {
+    vec3 a, b, c;
+
+    Triangle(const vec3 &a, const vec3 &b, const vec3 &c) : a(a), b(b), c(c) {}
+
+    vec3 closestPoint(const vec3 &p) const {
+	    vec3 ab = b - a;
+	    vec3 ac = c - a;
+	    vec3 ap = p - a;
+	    float d1 = ab.dot(ap);
+	    float d2 = ac.dot(ap);
+	    if (d1 <= 0.0f && d2 <= 0.0f) return a; // barycentric coordinates (1,0,0)
+
+	    // Check if P in vertex region outside B
+	    vec3 bp = p - b;
+	    float d3 = ab.dot(bp);
+	    float d4 = ac.dot(bp);
+	    if (d3 >= 0.0f && d4 <= d3) return b; // barycentric coordinates (0,1,0)
+
+	    float vc = d1*d4 - d3*d2;
+	    if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f) {
+		    float v = d1 / (d1 - d3);
+		    return a + ab * v; // barycentric coordinates (1-v,v,0)
+	    }
+
+	    vec3 cp = p - c;
+	    float d5 = ab.dot(cp);
+	    float d6 = ac.dot(cp);
+	    if (d6 >= 0.0f && d5 <= d6) return c; // barycentric coordinates (0,0,1)
+
+	    float vb = d5*d2 - d1*d6;
+	    if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f) {
+		    float w = d2 / (d2 - d6);
+		    return a + ac * w; // barycentric coordinates (1-w,0,w)
+	    }
+
+	    float va = d3*d6 - d5*d4;
+	    if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f) {
+		    float w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+		    return b + (c - b) * w; // barycentric coordinates (0,1-w,w)
+	    }
+
+	    float denom = 1.0f / (va + vb + vc);
+	    float v = vb * denom;
+	    float w = vc * denom;
+	    return a + ab * v + ac * w;
+    }
+};
+
+struct Sphere {
+    vec3  center;
+    float radius;
+
+    Sphere(const vec3 &center, float radius) : center(center), radius(radius) {}
+
+    bool intersect(const Triangle &tri, vec3 &n, float &t) {
+	    vec3 p = tri.closestPoint(center);
+	    vec3 v = center - p;
+
+	    float d = v.length2();
+	    if (d > radius * radius)
+		    return false;
+	    n = v.normal();
+	    t = radius - sqrtf(d);
+	    return true;
+    }
+};
+
+
 struct Stream {
     FILE *file;
     int  pos;
@@ -157,6 +237,17 @@ struct Stream {
         int res = fread(data, 1, count, file);
         pos += res;
         return res;
+    }
+
+    char* readStr() {
+        uint8 len;
+        read(&len, 1);
+        if (len == 0)
+            return NULL;
+        char *str = new char[len + 1];
+        read(str, len);
+        str[len] = 0;
+        return str;
     }
 };
 

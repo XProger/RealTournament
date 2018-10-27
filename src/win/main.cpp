@@ -1,3 +1,10 @@
+#ifdef _DEBUG
+    #define _CRTDBG_MAP_ALLOC
+    #include "crtdbg.h"
+    #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+    #define new DEBUG_NEW
+#endif
+
 #include <windows.h>
 #include "utils.h"
 #include "game.h"
@@ -125,6 +132,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
 }
 
 int main(int argc, char **argv) {
+#ifdef _DEBUG
+    _CrtMemState _msBegin, _msEnd, _msDiff;
+    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
+    _CrtMemCheckpoint(&_msBegin);
+#endif
+
     hWnd = CreateWindowA("static", "Real Tournament", WS_OVERLAPPEDWINDOW, 0, 0, 1280, 720, 0, 0, 0, 0);
 
     initGL();
@@ -163,4 +177,13 @@ int main(int argc, char **argv) {
     freeGL();
 
     DestroyWindow(hWnd);
+
+ #ifdef _DEBUG
+    _CrtMemCheckpoint(&_msEnd);
+
+    if (_CrtMemDifference(&_msDiff, &_msBegin, &_msEnd) > 0) {
+        _CrtDumpMemoryLeaks();
+        system("pause");
+    }
+#endif
 }
