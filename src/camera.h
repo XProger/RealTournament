@@ -10,6 +10,8 @@ struct Camera {
 
     mat4 mView, mProj, mViewProj;
 
+    float aspect;
+
     bool freeCam;
 
     Camera() {
@@ -41,7 +43,7 @@ struct Camera {
         
         mView.translate(-pos);
 
-        mProj.perspective(90.0f, (float)Context::width / (float)Context::height, 0.01f, 100.0f);
+        mProj.perspective(90.0f, aspect, 0.01f, 100.0f);
 
         mViewProj = mProj * mView;
     }

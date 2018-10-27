@@ -13,18 +13,28 @@
 namespace Game {
     Camera  *camera;
     Level   *level;
-    Player  *player;
+    Player  *players[8];
+    Player  *curPlayer;
+    int     playersCount;
+    bool    splitscreen;
 
     void init() {
         Context::init();
 
         camera = new Camera();
         level = new Level("level1.lvl");
-        player = new Player();
+
+        players[playersCount++] = new Player(level, Player::PLAYER_1);
+        players[playersCount++] = new Player(level, Player::PLAYER_2);
+
+        curPlayer = players[0];
+
+        splitscreen = true;
     }
 
     void deinit() {
-        delete player;
+        for (int i = 0; i < playersCount; i++)
+            delete players[i];
         delete level;
         delete camera;
         Context::deinit();
@@ -32,12 +42,8 @@ namespace Game {
 
     void updateTick() {
         level->update();
-        player->update(level);
-        if (!camera->freeCam) {
-            camera->pos = player->getHeadPos();
-            camera->rot = player->rot;
-        }
-        camera->update();
+        for (int i = 0; i < playersCount; i++)
+        players[i]->update();
     }
 
     void update() {
@@ -49,11 +55,40 @@ namespace Game {
         }
     }
 
-    void render() {
-        glViewport(0, 0, Context::width, Context::height);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    void renderView(float aspect) {
+        if (!camera->freeCam) {
+            camera->pos = curPlayer->getHeadPos();
+            camera->rot = curPlayer->rot;
+            camera->aspect = aspect;
+        }
+        camera->update();
 
         level->render(camera);
+        for (int i = 0; i < playersCount; i++)
+            if (players[i] != curPlayer)
+                players[i]->render(camera);
+    }
+
+    void render() {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+
+        float aspect = (float)Context::width / (float)Context::height;
+
+        if (splitscreen) {
+            aspect *= 0.5f;
+
+            curPlayer = players[0];
+            glViewport(0, 0, Context::width / 2, Context::height);
+            renderView(aspect);
+            curPlayer = players[1];
+            glViewport(Context::width / 2, 0, Context::width / 2, Context::height);
+            renderView(aspect);
+        } else {
+            curPlayer = players[0];
+            glViewport(0, 0, Context::width, Context::height);
+            renderView(aspect);
+        }
     }
 }
 

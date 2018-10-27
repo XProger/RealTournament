@@ -16,6 +16,12 @@
 #define PLAYER_JUMP_SPEED       8.0f
 
 struct Player {
+    enum PlayerType {
+        PLAYER_1,
+        PLAYER_2,
+        PLAYER_NET,
+    } type;
+
     enum {
         LEFT    = 1,
         RIGHT   = 2,
@@ -24,24 +30,37 @@ struct Player {
         JUMP    = 16,
     };
 
+    Level *level;
+
     int  health;
 
     vec3 pos;
     vec3 rot;
     vec3 velocity;
 
+    Level *model;
+
     bool onGround;
 
-    Player() {
-        respawn(vec3(0.0f, 3.0f, 0.0f), vec3(0.0f));
+    Player(Level *level, PlayerType type) : level(level), type(type) {
+        respawn();
+        model = new Level("enemy.lvl");
     }
 
-    ~Player() {}
+    ~Player() {
+        delete model;
+    }
 
-    void respawn(const vec3 &pos, const vec3 &rot) {
+    void respawn() {
+        Level::Object *obj = level->getRespawn();
+        if (!obj) return;
+
+        mat4 &m = obj->matrix;
+        pos = vec3(m.e03, m.e13, m.e23);
+
+        rot = vec3(0.0f, atan2f(m.e02, -m.e22), 0.0f);
+
         health = 100;
-        this->pos = pos;
-        this->rot = rot;
         velocity = vec3(0.0f);
         onGround = false;
     }
@@ -49,7 +68,7 @@ struct Player {
     vec3 getHeadPos() {
         return pos + vec3(0.0f, PLAYER_HEIGHT, 0.0f);
     }
-
+    /*
     void accelerate(const vec3 &dir, float speed) {
         float currentSpeed = velocity.dot(dir);
         float addSpeed = speed - currentSpeed;
@@ -64,22 +83,46 @@ struct Player {
 
         velocity = velocity + dir * accelSpeed;
     }
-
-    void update(Level *level) {
+    */
+    void update() {
         int32 input = 0;
-        if (Input::down['A']) input |= LEFT;
-        if (Input::down['D']) input |= RIGHT;
-        if (Input::down['W']) input |= UP;
-        if (Input::down['S']) input |= DOWN;
-        if (Input::down[VK_SPACE] && onGround) input |= JUMP;
+
+        switch (type) {
+            
+            case PLAYER_1 : 
+                rot.x -= Input::mouseDelta.y * 0.001f;
+                rot.y -= Input::mouseDelta.x * 0.001f;
+
+                if (Input::down['R']) {
+                    respawn();
+                    Input::down['R'] = false;
+                }
+                if (Input::down['A']) input |= LEFT;
+                if (Input::down['D']) input |= RIGHT;
+                if (Input::down['W']) input |= UP;
+                if (Input::down['S']) input |= DOWN;
+                if (Input::down[VK_SPACE]) input |= JUMP;
+                break;
+
+
+            case PLAYER_2 : 
+                if (Input::down[VK_LEFT]) input |= LEFT;
+                if (Input::down[VK_RIGHT]) input |= RIGHT;
+                if (Input::down[VK_UP]) input |= UP;
+                if (Input::down[VK_DOWN]) input |= DOWN;
+                if (Input::down[VK_RETURN]) input |= JUMP;
+                break;
+
+            default : ;
+        }
+
+
 
         velocity.y = velocity.y - level->gravity * deltaTime;
 
         if (onGround)
             velocity.y = 0.0f;
 
-        rot.x -= Input::mouseDelta.y * 0.001f;
-        rot.y -= Input::mouseDelta.x * 0.001f;
 
         rot.x = clamp(rot.x, -PI * 0.5f, +PI * 0.5f);
 
@@ -164,15 +207,28 @@ struct Player {
 
 
         
-        if (input & JUMP) {
+        if ((input & JUMP) && onGround) {
             velocity.y = PLAYER_JUMP_SPEED; 
         }
 
         pos = pos + velocity * deltaTime;
      
         onGround = false;
-        for (int i = 0; i < level->objectsCount; i++)
-            collide(level->objects[i]);
+        for (int i = 0; i < level->objectsCount; i++) {
+            Level::Object *obj = level->objects[i];
+            if (obj->type != Level::Object::MESH)
+                continue;
+            collide(obj);
+        }
+    }
+
+    void render(Camera *camera) {
+        mat4 &m = model->objects[0]->matrix;
+        m.identity();
+        m.translate(pos);
+        m.rotateY(rot.y);
+
+        model->render(camera);
     }
 
     void collide(Level::Object *obj) {

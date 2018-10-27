@@ -7,9 +7,17 @@
 #include "mesh.h"
 #include "camera.h"
 
+#define LEVEL_MAX_RESPAWNS 8
+
 struct Level {
 
     struct Object {
+        enum Type : uint32 {
+            MESH,
+            LAMP,
+            RESPAWN,
+        } type;
+
         mat4    matrix;
         Texture *diffuse;
         Texture *lightmap;
@@ -20,10 +28,12 @@ struct Level {
         Index   *indices;
         Vertex  *vertices;
 
-        Object(Stream &stream) {
-            diffuse = lightmap = NULL;
-
+        Object(Stream &stream) : diffuse(NULL), lightmap(NULL), indices(NULL), vertices(NULL), mesh(NULL) {
+            stream.read(&type, sizeof(type));
             stream.read(&matrix, sizeof(matrix));
+
+            if (type != MESH) return;
+
             char *tex1 = stream.readStr();
             char *tex2 = stream.readStr();
 
@@ -77,15 +87,34 @@ struct Level {
         //
     }
 
-    void render(Camera *camera) {
-        glEnable(GL_DEPTH_TEST);
+    Object* getRespawn() {
+        Object *respawns[LEVEL_MAX_RESPAWNS];
+        int count = 0;
 
+        for (int i = 0; i < objectsCount; i++) {
+            if (objects[i]->type == Object::RESPAWN) {
+                respawns[count++] = objects[i];
+                if (count >= LEVEL_MAX_RESPAWNS)
+                    break;
+            }
+        }
+
+        if (count == 0)
+            return NULL;
+
+        return respawns[rand() % count];
+    }
+
+    void render(Camera *camera) {
         shader->bind();
         shader->setParam(uViewProj, camera->mViewProj);
         shader->setParam(uColor, vec4(1.0f));
 
         for (int i = 0; i < objectsCount; i++) {
             Object *obj = objects[i];
+
+            if (obj->type != Object::MESH)
+                continue;
 
             shader->setParam(uModel, obj->matrix);
 
