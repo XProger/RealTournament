@@ -213,7 +213,8 @@ struct Player : BasePlayer {
 
         
         if ((input & JUMP) && onGround) {
-            velocity.y = PLAYER_JUMP_SPEED; 
+            velocity.y = PLAYER_JUMP_SPEED;
+            Sound::play("sound/BJump1.wav");
         }
 
         pos = pos + velocity * deltaTime;
@@ -271,8 +272,10 @@ struct Player : BasePlayer {
     virtual void hit(int damage) {
         health -= damage;
         LOG("hit: %d\n", health);
-        if (health <= 0)
+        if (health <= 0) {
+            Sound::play("sound/deathc53.wav");
             respawn();
+        }
     }
 
     virtual void trace(const vec3 &rayPos, const vec3 &rayDir, float &t) {

@@ -24,6 +24,55 @@ int osGetTime() {
     return int(count.QuadPart * 1000L / freq.QuadPart);
 }
 
+
+#define SND_BUFFER_SIZE 8192
+
+HWAVEOUT     waveOut;
+WAVEFORMATEX waveFmt;
+WAVEHDR      waveHdr[2];
+char        *sndData;
+
+void sndFill(HWAVEOUT waveOut, LPWAVEHDR waveHdr) {
+    waveOutUnprepareHeader(waveOut, waveHdr, sizeof(WAVEHDR));
+    Sound::fill((Sound::Frame*)waveHdr->lpData, SND_BUFFER_SIZE / 4);
+    waveOutPrepareHeader(waveOut, waveHdr, sizeof(WAVEHDR));
+    waveOutWrite(waveOut, waveHdr, sizeof(WAVEHDR));
+}
+
+void sndInit() {
+    Sound::init();
+
+    waveFmt.cbSize          = sizeof(waveFmt);
+    waveFmt.nChannels       = 2;
+    waveFmt.wFormatTag      = WAVE_FORMAT_PCM;
+    waveFmt.wBitsPerSample  = 16;
+    waveFmt.nSamplesPerSec  = 44100;
+    waveFmt.nBlockAlign     = 4;
+    waveFmt.nAvgBytesPerSec = 44100 * 4;
+
+    sndData = NULL;
+
+    if (waveOutOpen(&waveOut, WAVE_MAPPER, &waveFmt, (INT_PTR)hWnd, 0, CALLBACK_WINDOW) != MMSYSERR_NOERROR)
+        return;
+
+    sndData = new char[SND_BUFFER_SIZE * 2];
+    memset(&waveHdr, 0, sizeof(waveHdr));
+    for (int i = 0; i < 2; i++) {
+        waveHdr[i].dwBufferLength = SND_BUFFER_SIZE;
+        waveHdr[i].lpData         = sndData + SND_BUFFER_SIZE * i;
+        sndFill(waveOut, &waveHdr[i]);
+    }
+}
+
+void sndFree() {
+    delete[] sndData;
+    waveOutUnprepareHeader(waveOut, &waveHdr[0], sizeof(WAVEHDR));
+    waveOutUnprepareHeader(waveOut, &waveHdr[1], sizeof(WAVEHDR));
+    waveOutReset(waveOut);
+    waveOutClose(waveOut);
+    Sound::deinit();
+}
+
 void initGL() {
     hDC = GetDC(hWnd);
 
@@ -129,6 +178,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
             Context::width  = LOWORD(lParam);
             Context::height = HIWORD(lParam);
             break;
+        case MM_WOM_DONE :
+            sndFill((HWAVEOUT)wParam, (WAVEHDR*)lParam);
+            break;
         default : 
             return DefWindowProc(hWnd, Msg, wParam, lParam);
     }
@@ -147,6 +199,7 @@ int main(int argc, char **argv) {
 
     initGL();
     inputInit();
+    sndInit();
 
     SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)&WndProc);
     ShowWindow(hWnd, SW_SHOWDEFAULT);
@@ -178,6 +231,7 @@ int main(int argc, char **argv) {
 
     Game::deinit();
 
+    sndFree();
     freeGL();
 
     DestroyWindow(hWnd);

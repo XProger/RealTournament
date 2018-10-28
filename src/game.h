@@ -10,6 +10,8 @@
 #include "level.h"
 #include "player.h"
 #include "bullet.h"
+#include "sound.h"
+#include "ui.h"
 
 Level       *level;
 BasePlayer  *players[8];
@@ -22,6 +24,7 @@ namespace Game {
 
     void init() {
         Context::init();
+        UI::init();
 
         camera = new Camera();
         level = new Level("level1.lvl");
@@ -42,6 +45,7 @@ namespace Game {
             delete players[i];
         delete level;
         delete camera;
+        UI::deinit();
         Context::deinit();
     }
 
@@ -62,6 +66,8 @@ namespace Game {
     }
 
     void renderView(float aspect) {
+        glEnable(GL_DEPTH_TEST);
+
         if (!camera->freeCam) {
             camera->pos = ((Player*)curPlayer)->getHeadPos();
             camera->rot = ((Player*)curPlayer)->rot;
@@ -75,28 +81,39 @@ namespace Game {
                 players[i]->render(camera);
 
         renderBullets(camera);
+
+        UI::begin(aspect);
+        char buf[256];
+        sprintf(buf, "%d", ((Player*)curPlayer)->health);
+        UI::textOut(buf, 64, Context::height - 64.0f, 2.0f, 2.0f);
+        UI::end();
     }
 
     void render() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glEnable(GL_DEPTH_TEST);
 
         float aspect = (float)Context::width / (float)Context::height;
 
         if (splitscreen) {
-            aspect *= 0.5f;
+            float splitAspect = aspect * 0.5f;
 
             curPlayer = players[0];
             glViewport(0, 0, Context::width / 2, Context::height);
-            renderView(aspect);
+            renderView(splitAspect);
             curPlayer = players[1];
             glViewport(Context::width / 2, 0, Context::width / 2, Context::height);
-            renderView(aspect);
+            renderView(splitAspect);
         } else {
             curPlayer = players[0];
             glViewport(0, 0, Context::width, Context::height);
             renderView(aspect);
         }
+
+        glViewport(0, 0, Context::width, Context::height);
+        UI::begin(aspect);
+        const char *title = "Wellcome to Real Tournament!";
+        UI::textOut(title, (Context::width  - strlen(title) * 16.0f) / 2, 32, 1.0f, 1.0f);
+        UI::end();
     }
 }
 

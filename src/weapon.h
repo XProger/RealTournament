@@ -3,6 +3,7 @@
 
 #include "utils.h"
 #include "bullet.h"
+#include "sound.h"
 
 struct Weapon {
     enum Type {
@@ -44,6 +45,8 @@ struct Pistol : Weapon {
 
         vec3 velocity = dir * PISTOL_BULLET_SPEED;
         new SimpleBullet(pos, velocity);
+
+        Sound::play("sound/E_Shot.wav");
     }
 
     virtual void fire(const vec3 &pos, const vec3 &rot, bool hold, bool alternate) {

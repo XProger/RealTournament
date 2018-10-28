@@ -23,6 +23,21 @@ struct Mesh {
         glDeleteBuffers(2, &ID[0]);
     }
 
+    void update(Index *indices, int iCount, Vertex *vertices, int vCount) {
+        if (indices != NULL) {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID[0]);
+            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, iCount * sizeof(Index), indices);
+        }
+        this->iCount = iCount;
+
+        if (vertices != NULL) {
+            glBindBuffer(GL_ARRAY_BUFFER, ID[1]);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, vCount * sizeof(Vertex), vertices);
+        }
+        this->vCount = vCount;
+    }
+
+
     void bind() {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID[0]);
         glBindBuffer(GL_ARRAY_BUFFER, ID[1]);

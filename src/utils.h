@@ -20,6 +20,15 @@ extern float deltaTime;
 #define DEG2RAD (PI / 180.0f)
 #define RAD2DEG (180.0f / PI)
 
+#define FOURCC(str)   uint32(((uint8*)(str))[0] | (((uint8*)(str))[1] << 8) | (((uint8*)(str))[2] << 16) | (((uint8*)(str))[3] << 24) )
+
+
+int32 clamp(int32 x, int32 a, int32 b) {
+    if (x < a) return a;
+    if (x > b) return b;
+    return x;
+}
+
 float clamp(float x, float a, float b) {
     if (x < a) return a;
     if (x > b) return b;
