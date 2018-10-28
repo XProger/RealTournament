@@ -4,8 +4,9 @@
 #include "context.h"
 
 struct Texture {
-
     GLuint ID;
+    int width;
+    int height;
 
     Texture(const char *name) {
         Stream stream(name);
@@ -40,6 +41,9 @@ struct Texture {
 
         uint8 *data = new uint8[width * height * 4];
         stream.read(data, width * height * 4);
+
+        this->width  = width;
+        this->height = height;
 
         glGenTextures(1, &ID);
         glBindTexture(GL_TEXTURE_2D, ID);

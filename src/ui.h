@@ -12,6 +12,7 @@
 namespace UI {
     mat4 mViewProj;
     Texture *font;
+    Texture *crosshair;
     Shader  *shader;
     Mesh    *mesh;
 
@@ -19,8 +20,12 @@ namespace UI {
     Vertex *vertices;
     int    quadsCount;
 
+    Texture *activeTexture;
+
     void init() {
         quadsCount = 0;
+
+        crosshair = new Texture("crosshair.tga");
 
         font   = new Texture("font.tga");
         shader = new Shader("ui.glsl");
@@ -46,6 +51,7 @@ namespace UI {
         delete[] vertices;
         delete shader;
         delete font;
+        delete crosshair;
     }
 
     void flush() {
@@ -54,7 +60,7 @@ namespace UI {
         shader->bind();
         shader->setParam(uViewProj, mViewProj);
 
-        font->bind(sDiffuse);
+        activeTexture->bind(sDiffuse);
 
         mesh->update(NULL, quadsCount * 6, vertices, quadsCount * 4);
         mesh->bind();
@@ -64,6 +70,8 @@ namespace UI {
     }
 
     void begin(float aspect) {
+        activeTexture = NULL;
+
         glDisable(GL_DEPTH_TEST);
         mViewProj.ortho(0, (float)Context::height * aspect, (float)Context::height, 0, 0, 1);
 
@@ -75,7 +83,15 @@ namespace UI {
         flush();
     }
 
+    void setTexture(Texture *tex) {
+        if (activeTexture != tex)
+            flush();
+        activeTexture = tex;
+    }
+
     void textOut(const char *str, float x, float y, float sx, float sy) {
+        setTexture(font);
+
         float ox = x;
         float oy = y;
 
@@ -106,7 +122,28 @@ namespace UI {
 
             ox += 16.0f * sx;
             quadsCount++;
+            if (quadsCount >= UI_MAX_QUADS)
+                flush();
         }
+    }
+
+    void sprite(Texture *tex, float x, float y, float sizeX, float sizeY) {
+        setTexture(tex);
+
+        int q = quadsCount * 4;
+        vertices[q + 0].coord = vec3(x - sizeX, y - sizeY, 0);
+        vertices[q + 1].coord = vec3(x + sizeX, y - sizeY, 0);
+        vertices[q + 2].coord = vec3(x + sizeX, y + sizeY, 0);
+        vertices[q + 3].coord = vec3(x - sizeX, y + sizeY, 0);
+
+        vertices[q + 0].texCoord = vec4(0, 0, 0, 0);
+        vertices[q + 1].texCoord = vec4(1, 0, 0, 0);
+        vertices[q + 2].texCoord = vec4(1, 1, 0, 0);
+        vertices[q + 3].texCoord = vec4(0, 1, 0, 0);
+
+        quadsCount++;
+        if (quadsCount >= UI_MAX_QUADS)
+            flush();
     }
 
 }

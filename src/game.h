@@ -83,6 +83,8 @@ namespace Game {
         renderBullets(camera);
 
         UI::begin(aspect);
+        Texture *tex = UI::crosshair;
+        UI::sprite(tex, Context::height * aspect * 0.5f, Context::height * 0.5f, tex->width * 0.5f, tex->height * 0.5f);
         char buf[256];
         sprintf(buf, "%d", ((Player*)curPlayer)->health);
         UI::textOut(buf, 64, Context::height - 64.0f, 2.0f, 2.0f);
