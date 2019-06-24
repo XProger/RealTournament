@@ -97,8 +97,8 @@ namespace Sound {
                 R /= samplesCount;
             }
             */
-            frame[i].L = clamp(L, -0xFFFF, +0xFFFF);
-            frame[i].R = clamp(R, -0xFFFF, +0xFFFF);
+            frame[i].L = clamp(L, -0x7FFF, +0x7FFF);
+            frame[i].R = clamp(R, -0x7FFF, +0x7FFF);
         }
 
         int i = 0;

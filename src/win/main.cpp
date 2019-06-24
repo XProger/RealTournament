@@ -218,6 +218,8 @@ int main(int argc, char **argv) {
                 isQuit = true;
         } else {
             int time = osGetTime();
+            if (time == lastTime) continue;
+
             deltaTime = (time - lastTime) / 1000.0f;
             lastTime = time;
 
